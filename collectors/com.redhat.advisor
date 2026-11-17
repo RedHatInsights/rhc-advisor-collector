@@ -1,0 +1,7 @@
+#!/usr/bin/python3
+import sys
+
+from rhc_advisor_collector.rhc import _main
+
+if __name__ == "__main__":
+    sys.exit(_main())

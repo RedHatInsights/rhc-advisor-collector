@@ -1,0 +1,11 @@
+[Unit]
+Description=Red Hat Advisor Collector timer
+Documentation=https://github.com/RedHatInsights/rhc-advisor-collector
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=16h
+FixedRandomDely=true
+
+[Install]
+WantedBy=timers.target

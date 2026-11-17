@@ -1,0 +1,81 @@
+[Unit]
+Description=Red Hat Advisor Collector
+After=network.target
+Documentation=https://github.com/RedHatInsights/rhc-advisor-collector
+
+# Only try to restart six times
+StartLimitIntervalSec=12h
+StartLimitBurst=6
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/rhc/rhc-collector run com.redhat.advisor
+Restart=on-failure
+RestartSec=1h
+
+# CAP_SETUID/CAP_SETGID: rhc-collector applies the collector TOML's user/group
+# on exec (com.redhat.advisor.toml runs root:root, so this is a no-op here,
+# but rhc-collector takes the same code path regardless of target user).
+# CAP_DAC_READ_SEARCH/CAP_SYS_PTRACE/CAP_SYSLOG: same as insights-client.service,
+# for protected-file collection, process-scan specs, and dmesg collection.
+CapabilityBoundingSet=CAP_SETUID CAP_SETGID CAP_DAC_READ_SEARCH CAP_SYS_PTRACE CAP_SYSLOG
+
+# Requires rhc-advisor-collector-selinux's rhc_advisor_collector.te to allow
+# `rhc_collector_t insights_core_t:process2 { nnp_transition nosuid_transition }`
+# (confirmed present there).
+NoNewPrivileges=yes
+
+# Insights Core's SELinux-labeled temp files can't be cleaned up by PrivateTmp
+PrivateTmp=no
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateMounts=yes
+# rhc-collector's own scratch/output directory for this collector.
+ReadWritePaths=/var/cache/rhc/collectors
+CacheDirectory=rhc/collectors
+
+# _build_client_config()/_get_rm_conf() in rhc_advisor_collector.rhc load
+# /etc/insights-client/insights-client.conf and the redaction rules through the
+# same insights-client modules insights-client.service itself needs these
+# paths for.
+ReadWritePaths=/etc/insights-client /var/lib/insights
+ReadWritePaths=/tmp /var/tmp
+
+ProtectClock=yes
+ProtectHostname=yes
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+
+# Not ProtectKernelModules=/ProtectKernelLogs=/PrivateDevices=yes:
+# insights-client.service omits all three for the same engine. ProtectKernelLogs
+# would specifically conflict with CAP_SYSLOG above (dmesg collection).
+LockPersonality=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+
+# Not a bare `yes`: insights-client.service only restricts user namespaces.
+RestrictNamespaces=~user
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+SystemCallArchitectures=native
+
+SystemCallFilter=@system-service
+# Not denying @debug (unlike rhc's minimal example): CAP_SYS_PTRACE above needs
+# it, same reason insights-client.service keeps it available for its
+# process-scan specs.
+# Not denying @privileged either (unlike insights-client.service): rhc-collector
+# applies the collector TOML's user/group via setuid/setgid/setgroups on every
+# exec, even root:root (confirmed: denying @privileged alongside granting
+# CAP_SETUID/CAP_SETGID above breaks that fork/exec with SIGSYS -- insights-client
+# doesn't need this because it never does that fork+credential dance itself; rhc's
+# minimal example already excludes @privileged from its own denylist for the
+# same reason this one must).
+SystemCallFilter=~@clock @cpu-emulation @module @mount @obsolete @raw-io @reboot @swap
+SystemCallErrorNumber=EPERM
+UMask=0077
+
+# parameters from insights-client.service
+CPUQuota=30%
+MemoryHigh=1G
+MemoryMax=2G
+TasksMax=300
+BlockIOWeight=100
