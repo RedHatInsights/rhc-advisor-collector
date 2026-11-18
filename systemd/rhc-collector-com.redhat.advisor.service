@@ -20,10 +20,8 @@ RestartSec=1h
 # for protected-file collection, process-scan specs, and dmesg collection.
 CapabilityBoundingSet=CAP_SETUID CAP_SETGID CAP_DAC_READ_SEARCH CAP_SYS_PTRACE CAP_SYSLOG
 
-# Requires rhc-advisor-collector-selinux's rhc_advisor_collector.te to allow
-# `rhc_collector_t insights_core_t:process2 { nnp_transition nosuid_transition }`
-# (confirmed present there).
-NoNewPrivileges=yes
+# Disabled, matching insights-client.service.
+NoNewPrivileges=no
 
 # Insights Core's SELinux-labeled temp files can't be cleaned up by PrivateTmp
 PrivateTmp=no

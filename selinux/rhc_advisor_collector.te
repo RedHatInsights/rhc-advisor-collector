@@ -28,9 +28,14 @@ optional_policy(`
     # insights_core_t.
     domtrans_pattern(rhc_collector_t, rhc_collector_advisor_exec_t, insights_core_t)
 
-    # rhc-collector-com.redhat.advisor.service runs with NoNewPrivileges=yes.
-    # Without this permission the kernel blocks the transition above
-    # outright once NNP is set, regardless of domtrans_pattern.
+    # Without this permission the kernel would block the transition above
+    # outright if NoNewPrivileges were set on rhc-collector-com.redhat.advisor.service,
+    # regardless of domtrans_pattern. That setting is currently disabled there
+    # (insights_core_t's own collection work transitions into other domains,
+    # e.g. ifconfig_t for `ip`, that aren't covered the same way -- see that
+    # file's comment), so this permission isn't exercised right now. Kept
+    # harmless and ready for if/when that's resolved -- don't remove it just
+    # because it's currently a no-op.
     allow rhc_collector_t insights_core_t:process2 { nnp_transition nosuid_transition };
 
     # After the transition, the collector (now insights_core_t) inherits the
