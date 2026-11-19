@@ -8,9 +8,9 @@ This repository is the upstream for the `rhc-advisor-collector` RPM. The same
 spec also builds `rhc-advisor-collector-selinux` from the SELinux policy
 sources in [`selinux/`](selinux/). The collection engine stays in insights-core;
 this package ships the `rhc_advisor_collector.rhc` adapter that bridges
-rhc-collector's executable contract to it. The rhc client stays in the rhc repository.
+rhc-collector's executable contract to it.
 
-The collector executable accepts the `collect` subcommand and writes its output
+The collector executable accepts the `collect` subcommand and writes collected data
 in the working directory set by `rhc-collector`.
 
 ## Building

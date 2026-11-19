@@ -16,11 +16,13 @@ RestartSec=1h
 # CAP_SETUID/CAP_SETGID: rhc-collector applies the collector TOML's user/group
 # on exec (com.redhat.advisor.toml runs root:root, so this is a no-op here,
 # but rhc-collector takes the same code path regardless of target user).
-# CAP_DAC_READ_SEARCH/CAP_SYS_PTRACE/CAP_SYSLOG: same as insights-client.service,
-# for protected-file collection, process-scan specs, and dmesg collection.
+# Insights Core must run as root to read protected host data. Keep only the
+# extra privileges used by protected-file collection, Malware process scans,
+# and dmesg collection.
 CapabilityBoundingSet=CAP_SETUID CAP_SETGID CAP_DAC_READ_SEARCH CAP_SYS_PTRACE CAP_SYSLOG
 
-# Disabled, matching insights-client.service.
+# Keep NoNewPrivileges disabled so SELinux can transition from init_t to
+# insights_client_t.
 NoNewPrivileges=no
 
 # Insights Core's SELinux-labeled temp files can't be cleaned up by PrivateTmp
@@ -57,16 +59,9 @@ RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 SystemCallArchitectures=native
 
 SystemCallFilter=@system-service
-# Not denying @debug (unlike rhc's minimal example): CAP_SYS_PTRACE above needs
-# it, same reason insights-client.service keeps it available for its
-# process-scan specs.
-# Not denying @privileged either (unlike insights-client.service): rhc-collector
-# applies the collector TOML's user/group via setuid/setgid/setgroups on every
-# exec, even root:root (confirmed: denying @privileged alongside granting
-# CAP_SETUID/CAP_SETGID above breaks that fork/exec with SIGSYS -- insights-client
-# doesn't need this because it never does that fork+credential dance itself; rhc's
-# minimal example already excludes @privileged from its own denylist for the
-# same reason this one must).
+# Keep @debug available for Malware's live process scan. Block mount and
+# privileged syscalls as well as clock, module, obsolete, raw-I/O, reboot, and
+# swap operations.
 SystemCallFilter=~@clock @cpu-emulation @module @mount @obsolete @raw-io @reboot @swap
 SystemCallErrorNumber=EPERM
 UMask=0077
