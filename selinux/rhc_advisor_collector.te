@@ -1,0 +1,55 @@
+policy_module(rhc_advisor_collector, 1.0.0)
+
+########################################
+#
+# Entry point for /usr/libexec/rhc/collectors/com.redhat.advisor.
+# The process domain stays insights_core_t, which is defined in the
+# insights_core module shipped by insights-core-selinux.
+#
+
+gen_require(`
+    type insights_core_t;
+')
+
+# File type for /usr/libexec/rhc/collectors/com.redhat.advisor.
+# domain_entry_file() marks it as a valid entrypoint into insights_core_t.
+type rhc_collector_advisor_exec_t;
+files_type(rhc_collector_advisor_exec_t)
+domain_entry_file(insights_core_t, rhc_collector_advisor_exec_t)
+
+# Search /var/tmp (tmp_t) so insights_core_t can reach /var/tmp/rhc-*.
+# Keep this call outside optional_policy(): files_search_tmp() expands to a
+# gen_require of the base type tmp_t, which checkmodule rejects inside optional.
+files_search_tmp(insights_core_t)
+
+optional_policy(`
+    gen_require(`
+        type rhc_collector_t;
+        type rhc_tmp_t;
+    ')
+
+    # Automatic transition: rhc-collector (rhc_collector_t) execing
+    # com.redhat.advisor (rhc_collector_advisor_exec_t) ends up running as
+    # insights_core_t.
+    domtrans_pattern(rhc_collector_t, rhc_collector_advisor_exec_t, insights_core_t)
+
+    # Without this permission the kernel blocks the transition above when
+    # NoNewPrivileges is set on rhc-collector-com.redhat.advisor.service,
+    # regardless of domtrans_pattern. That setting is currently disabled there
+    # (insights_core_t transitions into other domains during collection, for
+    # example ifconfig_t when running ip, and those transitions are not covered
+    # the same way). This permission is not exercised right now. Kept so it can
+    # be turned on later. Do not remove it only because it is currently a no-op.
+    allow rhc_collector_t insights_core_t:process2 { nnp_transition nosuid_transition };
+
+    # After the transition, the collector (now insights_core_t) inherits the
+    # stdout/stderr pipes rhc-collector set up.
+    allow insights_core_t rhc_collector_t:fd use;
+    allow insights_core_t rhc_collector_t:fifo_file rw_fifo_file_perms;
+
+    # Scratch working directory: rhc-collector creates /var/tmp/rhc-* (rhc_tmp_t)
+    # and runs the collector with that as its cwd. insights_core_t needs full
+    # manage access to it. Search on /var/tmp is granted above.
+    manage_dirs_pattern(insights_core_t, rhc_tmp_t, rhc_tmp_t)
+    manage_files_pattern(insights_core_t, rhc_tmp_t, rhc_tmp_t)
+')

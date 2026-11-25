@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+venv/
+dist/
+build/
+*.egg
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*~
+
+# builds
+/dist/*
+/srpm/*
+/rpm/*
+/mock/*
+
+# SELinux policy build artifacts (see selinux/, built via the devel Makefile)
+selinux/*.tc
+selinux/*.pp
+selinux/*.pp.bz2
+selinux/tmp/
+
+# claude
+CLAUDE.md
