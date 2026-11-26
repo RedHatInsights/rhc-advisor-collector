@@ -43,22 +43,6 @@ def _build_client_config():
     return InsightsConfig().load_all()
 
 
-def _get_machine_id():
-    """
-    insights.collect.collect() does not call this itself - it's
-    orchestration-layer logic that insights-client normally handles before
-    collection. On a host that never register, machine-id won't exist,
-    so we generate/read it here, exactly as insights-client would.
-    """
-    from insights.client.utilities import generate_machine_id
-
-    try:
-        machine_id = generate_machine_id()
-        logger.debug("machine-id: %s", machine_id)
-    except Exception:
-        logger.warning("Could not generate/read machine-id; continuing without it.", exc_info=True)
-
-
 def _get_rm_conf(config):
     """
     Build the redaction config exactly as insights-client does
@@ -100,8 +84,6 @@ def collect():
     except Exception:
         logger.error("Could not load configuration.", exc_info=True)
         return EXIT_COLLECTION_FAILED
-
-    _get_machine_id()
 
     try:
         rm_conf = _get_rm_conf(config)
