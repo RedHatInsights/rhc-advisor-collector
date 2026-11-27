@@ -38,7 +38,7 @@ CacheDirectory=rhc/collectors
 # /etc/insights-client/insights-client.conf and the redaction rules through the
 # same insights-client modules insights-client.service itself needs these
 # paths for.
-ReadWritePaths=/etc/insights-client /var/lib/insights
+ReadWritePaths=/etc/insights-client
 ReadWritePaths=/tmp /var/tmp
 
 ProtectClock=yes
